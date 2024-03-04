@@ -1,0 +1,38 @@
+{
+    "name": "@sinkapoy/home-integrations-zigbee",
+    "version": "0.0.1",
+    "description": "sinkahome zigbee integration",
+    "main": "./dist/node.js",
+    "typings": "./dist/index.d.ts",
+    "author": "sinkapoy",
+    "license": "GPL-3.0-or-later",
+    "scripts": {
+        "build": "rollup -c rollup.config.ts --configPlugin @rollup/plugin-typescript",
+        "watch": "rollup -c rollup.config.ts --watch --configPlugin @rollup/plugin-typescript"
+    },
+    "devDependencies": {
+        "@rollup/plugin-commonjs": "^25.0.7",
+        "@rollup/plugin-json": "^6.0.1",
+        "@rollup/plugin-node-resolve": "^15.2.3",
+        "@rollup/plugin-typescript": "^11.1.2",
+        "@types/node": "20.9.0",
+        "dts-bundle-generator": "^8.0.1",
+        "prettier": "^3.0.0",
+        "rollup": "^4.4.0",
+        "rollup-plugin-typescript2": "^0.36.0",
+        "tslib": "^2.6.0",
+        "typescript": "^5.2.2"
+    },
+    "dependencies": {
+        "@ash.ts/ash": "^1.3.0",
+        "@sinkapoy/home-core": "file:../../../sinkahome-core",
+        "zigbee-herdsman": ">=0.34.4",
+        "zigbee-herdsman-converters": ">=18.38.0",
+        "uri-js": "^4.4.1"
+    },
+    "files": [
+        "dist/index.d.ts",
+        "dist/node.js",
+        "dist/node.js.map"
+    ]
+}
