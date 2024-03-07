@@ -23,11 +23,6 @@
             "esnext",
             "ES2018"
         ],
-        "paths": {
-            "@widgets/*": [
-                "./*"
-            ]
-        },
         "skipDefaultLibCheck": true,
         "declaration": true,
         "declarationDir": "dist"

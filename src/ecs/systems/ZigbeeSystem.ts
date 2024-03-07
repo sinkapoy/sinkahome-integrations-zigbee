@@ -1,13 +1,13 @@
-import { IZhmDatabase } from "./../../interfaces/IZhmDatabase";
+
 import { HomeSystem, PropertiesComponent, serviceLocator } from "@sinkapoy/home-core";
-import { SaveController } from "@widgets/src/utils/SaveController";
-import { createZigbeeController, createZigbeeGadget, getUuidByZigbeeDevice } from "@widgets/src/utils/createZigbeeDevice";
-import { Controller, Zcl } from "zigbee-herdsman";
+import { Controller } from "zigbee-herdsman";
 import { Device, Endpoint } from "zigbee-herdsman/dist/controller/model";
-import { Cluster, ZclFrame } from "zigbee-herdsman/dist/zcl";
+
 import { ZigbeeDeviceDefinition } from "../components/ZigbeeDevice";
 import { Entity } from "@ash.ts/ash";
 import { ZigbeeEndDeviceNode } from "../nodes/ZigbeeEndDeviceNode";
+import { createZigbeeController, createZigbeeGadget, getUuidByZigbeeDevice } from "src/utils/createZigbeeDevice";
+import { SaveController } from "src/utils/SaveController";
 
 interface IZhmPermitJoinChangedPayload {
     permitted: boolean;
@@ -37,34 +37,7 @@ export class ZigbeeSystem extends HomeSystem {
     }
 
     onGadgetAdd(node: ZigbeeEndDeviceNode) {
-        // if (!node.defs.definition) {
-        //     console.log("no definition for gadget restore")
-        // }
-
-        // // @ts-expect-error bad types =)
-        // const database = node.defs.controller.database as IZhmDatabase;
-        // const dbEntry = Object.values(database.entries).filter(entry => entry.ieeeAddr === node.defs.device.ieeeAddr)[0];
-
-        // const { definition, device, controller } = node.defs;
-        // if (dbEntry.endpoints) {
-        //     for (const endpoint of Object.values(dbEntry.endpoints)) {
-        //         if (!endpoint.clusters) continue;
-        //         for (const key in endpoint.clusters) {
-        //             const data = endpoint.clusters[key].attributes;
-        //             if (data)
-        //                 // @ts-expect-error
-        //                 this.onMessage({
-        //                     type: 'attributeReport',
-        //                     device,
-        //                     data,
-        //                     cluster: key,
-        //                     endpoint: device.getEndpoint(endpoint.epId),
-        //                 }, controller)
-        //         }
-        //     }
-        // }
-
-
+        //
     }
 
     writeProperty(entity: Entity, propId: string, value: any) {
@@ -139,16 +112,7 @@ export class ZigbeeSystem extends HomeSystem {
                         this.engine.addEntity(controllerEntity);
                         controller.getDevicesByType('EndDevice').forEach(d => {
                             const gadget = createZigbeeGadget(d, controller, true);
-                            // const defs = gadget.get(ZigbeeDeviceDefinition)!;
                             this.engine.addEntity(gadget);
-                            // if (defs.definition?.configure)
-                            //     defs.definition.configure(
-                            //         d,
-                            //         controller.getDevicesByType('Coordinator')[0].endpoints[0],
-                            //         console
-                            //     ).catch((reason) => {
-                            //         console.error(reason);
-                            //     });
                         });
                     } catch (e) {
                         console.error(e);

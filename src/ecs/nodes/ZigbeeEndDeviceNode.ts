@@ -5,5 +5,5 @@ import { ZigbeeDeviceDefinition } from "../components/ZigbeeDevice";
 export class ZigbeeEndDeviceNode extends defineNode({
     properties: PropertiesComponent,
     actions: ActionsComponent,
-    // defs: ZigbeeDeviceDefinition,
+    defs: ZigbeeDeviceDefinition,
 }) {}

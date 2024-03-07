@@ -73,6 +73,7 @@ export function createZigbeeGadget(device: Device, controller: Controller, confi
         if (defininition.definition) {
             convertConverterDefinitionToECS(gadget, defininition.definition, defininition.device);
         }
+        defininition.restoreAttributes();
         
     });
 

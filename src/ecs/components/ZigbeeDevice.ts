@@ -1,3 +1,5 @@
+
+import { IZhmDatabase } from "src/interfaces/IZhmDatabase";
 import { inspect } from "util";
 import { Controller } from "zigbee-herdsman";
 import { Definition, Expose, findByDevice } from "zigbee-herdsman-converters";
@@ -45,6 +47,32 @@ export class ZigbeeDeviceDefinition {
                     exposes = this.definition.exposes!;
             }
             this.exposes = exposes;
+        }
+    }
+
+    restoreAttributes(){
+        const { definition, device, controller } = this;
+        // @ts-expect-error bad types =)
+        const database = controller.database as IZhmDatabase;
+        const dbEntry = Object.values(database.entries).filter(entry => entry?.ieeeAddr === device.ieeeAddr)[0];
+
+        
+        if (dbEntry.endpoints) {
+            for (const endpoint of Object.values(dbEntry.endpoints)) {
+                if (!endpoint.clusters) continue;
+                for (const key in endpoint.clusters) {
+                    const data = endpoint.clusters[key].attributes;
+                    if (data)
+                        controller.emit('message', {
+                            type: 'attributeReport',
+                            device,
+                            data,
+                            cluster: key,
+                            endpoint: device.getEndpoint(endpoint.epId),
+                            meta: {},
+                        });
+                }
+            }
         }
     }
 }
