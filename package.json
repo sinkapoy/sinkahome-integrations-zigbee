@@ -3,7 +3,6 @@
     "version": "0.0.1",
     "description": "sinkahome zigbee integration",
     "main": "./dist/node.js",
-    "typings": "./dist/index.d.ts",
     "author": "sinkapoy",
     "license": "GPL-3.0-or-later",
     "scripts": {
@@ -31,7 +30,6 @@
         "zigbee-herdsman-converters": ">=18.38.0"
     },
     "files": [
-        "dist/index.d.ts",
         "dist/node.js",
         "dist/node.js.map"
     ]
