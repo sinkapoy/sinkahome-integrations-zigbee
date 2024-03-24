@@ -1,6 +1,5 @@
 
 import { IZhmDatabase } from "src/interfaces/IZhmDatabase";
-import { inspect } from "util";
 import { Controller } from "zigbee-herdsman";
 import { Definition, Expose, findByDevice } from "zigbee-herdsman-converters";
 import { Device } from "zigbee-herdsman/dist/controller/model";
@@ -36,7 +35,7 @@ export class ZigbeeDeviceDefinition {
                 console.error('error configue zigbee device');
                 console.error(e);
             }
-        if (this.definition.exposes) {
+        if (this.definition?.exposes) {
             let exposes: Expose[];
             switch (typeof this.definition.exposes) {
                 case 'function': {

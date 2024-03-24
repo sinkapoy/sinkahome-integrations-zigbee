@@ -1,18 +1,21 @@
 import type { Entity } from "@ash.ts/ash";
-import { IProperty, PropertiesComponent, PropertyAccessMode, PropertyDataType, createGadget } from "@sinkapoy/home-core";
+import { ActionsComponent, IProperty, PropertiesComponent, PropertyAccessMode, PropertyDataType, createGadget } from "@sinkapoy/home-core";
 import { basename } from "path";
 import type { Controller } from "zigbee-herdsman";
 import type { Device } from "zigbee-herdsman/dist/controller/model";
 import { ZigbeeDeviceDefinition } from "../ecs/components/ZigbeeDevice";
 import { Definition, Expose } from "zigbee-herdsman-converters";
+import { access } from "zigbee-herdsman-converters/lib/exposes";
 
 function convertZhmAccessMode(mode: number) {
-    switch (mode) {
-        case 1:
-            return PropertyAccessMode.rn;
-        default:
-            return PropertyAccessMode.none;
+    let ourAccessMode: PropertyAccessMode = 0;
+    if (mode & access.STATE || mode & access.GET) {
+        ourAccessMode |= PropertyAccessMode.rn;
     }
+    if (mode & access.SET) {
+        ourAccessMode |= PropertyAccessMode.write;
+    }
+    return ourAccessMode;
 }
 
 function convertZhmDataType(type: string) {
@@ -27,6 +30,9 @@ function convertZhmDataType(type: string) {
 }
 
 function convertConverterDefinitionToECS(entity: Entity, definition: Definition, device: Device) {
+    // zhm-converter has poor types for "exposings" so here's a lot of <any>
+    // to not to copy zhm-converter interfaces itself
+
     const props = entity.get(PropertiesComponent);
     const defs = entity.get(ZigbeeDeviceDefinition);
     if (defs?.exposes) {
@@ -38,18 +44,34 @@ function convertConverterDefinitionToECS(entity: Entity, definition: Definition,
                 description: expo.description,
                 dataType: convertZhmDataType(expo.type),
                 value: 0,
+                units: (expo as any).unit
+            }
+            switch (expo.type) {
+                case 'enum': {
+                    json.enumData = {};
+                    const values = ((expo as any).values as (string | number)[]);
+                    if (values?.length) {
+                        json.value = values[0];
+                        for (const value of values) {
+                            json.enumData[value + ''] = value;
+                        }
+                    }
+                }
+                    break;
+                case 'numeric': {
+                    const presets = (expo as any).presets as { name: string; value: number | string; description: string }[] | undefined;
+                    if (presets?.length) {
+                        json.enumData = {};
+                        json.value = presets[0].value;
+                        for (const preset of presets) {
+                            json.enumData[preset.name] = preset.value;
+                        }
+                    }
+                }
+                    break;
             }
             props?.createPropertyFromJson(json);
-            console.log(expo)
         }
-    }
-
-    if(defs?.definition?.endpoint){
-        console.log("==============")
-        console.log(defs?.definition?.endpoint(defs.device));
-    } else {
-        console.log("=============")
-        console.log("no endpoints")
     }
 }
 
@@ -67,14 +89,14 @@ export function createZigbeeGadget(device: Device, controller: Controller, confi
     });
 
     const defininition = new ZigbeeDeviceDefinition(device, controller);
-    
+
     defininition.getDefinition(configure).then(() => {
         gadget.add(defininition);
         if (defininition.definition) {
             convertConverterDefinitionToECS(gadget, defininition.definition, defininition.device);
         }
         defininition.restoreAttributes();
-        
+
     });
 
     return gadget;

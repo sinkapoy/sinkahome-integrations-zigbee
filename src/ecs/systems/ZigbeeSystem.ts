@@ -45,16 +45,32 @@ export class ZigbeeSystem extends HomeSystem {
         const props = entity.get(PropertiesComponent);
         if (!props) return;
         const controller = entity.get(Controller)!
-        switch (propId) {
-            case 'join:permit':
-                controller.permitJoin(!!value);
-                props.get('join:permit')!.value = !!value;
-                break;
-            case 'join:permit-time':
-                controller.permitJoin(!!value, undefined, Number(value));
-                props.get('join:permit-time')!.value = Number(value);
-                break;
+        if(controller){
+            switch (propId) {
+                case 'join:permit':
+                    controller.permitJoin(!!value);
+                    props.get('join:permit')!.value = !!value;
+                    return;
+                case 'join:permit-time':
+                    controller.permitJoin(!!value, undefined, Number(value));
+                    props.get('join:permit-time')!.value = Number(value);
+                    return;
+            }
         }
+        const defs = entity.get(ZigbeeDeviceDefinition);
+        if(!defs?.definition) return;
+        // defs.definition.toZigbee?.forEach(converter=>{
+        //     if(converter.key.indexOf(propId) < 0){
+        //         return;
+        //     }
+        //     if(converter.convertSet){
+        //         const meta = {endpoint_name: endpointName, options: entitySettings, message: {...message}, logger, device,
+        //         state: entityState, membersState, mapped: definition};
+        //         converter.convertSet(defs.device.endpoints[0], propId, value, )
+        //     }
+            
+        // })
+        
     }
 
 
@@ -105,13 +121,13 @@ export class ZigbeeSystem extends HomeSystem {
                 controller.start().catch((e) => {
                     console.error(e);
                 }).then(() => {
-                    // @ts-expect-error
-                    console.log(controller.database);
+                    // // @ts-expect-error
+                    // console.log(controller.database);
                     try {
                         controller.permitJoin(true, undefined, 600);
                         this.engine.addEntity(controllerEntity);
-                        controller.getDevicesByType('EndDevice').forEach(d => {
-                            const gadget = createZigbeeGadget(d, controller, true);
+                        controller.getDevices().forEach(d => {
+                            const gadget = createZigbeeGadget(d, controller, false);
                             this.engine.addEntity(gadget);
                         });
                     } catch (e) {
@@ -137,7 +153,7 @@ export class ZigbeeSystem extends HomeSystem {
     }, controller: Controller) {
         // @ts-expect-error zhm code =)
         const database = controller.database;
-        console.log(database)
+        // console.log(database)
         const entity = this.engine.getEntityByName(getUuidByZigbeeDevice(data.device));
         if (!entity) {
             console.error('cant find entity', getUuidByZigbeeDevice(data.device));
@@ -149,24 +165,13 @@ export class ZigbeeSystem extends HomeSystem {
             console.error('device has no definition ' + defs?.device.modelID);
             return;
         }
-
-
-
-        console.log('msg from ' + defs.device.modelID);
         const fromZigbee = defs.definition?.fromZigbee;
         if (!fromZigbee) {
             console.error('no from zigbee for device ' + defs.device.modelID);
             return;
         }
+        const meta = this.generateZhmMeta(data.device);
         for (const rule of fromZigbee) {
-            console.log(rule);
-            console.log(data.cluster, data.type)
-            const meta = {
-                device: data.device,
-                logger: console,
-                state: {}, // todo: state
-                deviceExposesChanged: () => { },
-            }
             if (rule.cluster === data.cluster && (rule.type === data.type || rule.type.indexOf(data.type) > -1)) {
                 const result = await rule.convert(
                     defs.definition,
@@ -183,11 +188,16 @@ export class ZigbeeSystem extends HomeSystem {
                         this.engine.emit('gadgetPropertyEvent', entity, prop);
                     }
                 }
-                console.log('===========');
-                console.log(defs.device.modelID);
-                console.log('msg', result);
             }
         }
     }
 
+    private generateZhmMeta(device: Device){
+        return {
+            device: device,
+            logger: console,
+            state: {}, // todo: state
+            deviceExposesChanged: () => { },
+        }
+    }
 }
