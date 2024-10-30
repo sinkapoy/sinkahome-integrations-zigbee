@@ -1,8 +1,6 @@
-import { DeviceAuthenticationLevelTLV } from './../../../node_modules/zigbee-herdsman/dist/zspec/zdo/definition/tstypes.d';
 import { HomeSystem, PropertiesComponent } from '@sinkapoy/home-core';
 import { Controller } from 'zigbee-herdsman';
 import { type Device, type Endpoint } from 'zigbee-herdsman/dist/controller/model';
-
 import { ZigbeeDeviceDefinition } from '../components/ZigbeeDevice';
 import { type Entity } from '@ash.ts/ash';
 import { ZigbeeEndDeviceNode } from '../nodes/ZigbeeEndDeviceNode';
