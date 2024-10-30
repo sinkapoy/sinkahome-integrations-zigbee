@@ -1,7 +1,15 @@
 import { homeEngine } from '@sinkapoy/home-core';
 import { ZigbeeSystem } from './ecs/systems/ZigbeeSystem';
+import { setLogger } from 'zigbee-herdsman';
 
 homeEngine.addSystem(new ZigbeeSystem(), 1);
+
+setLogger({
+    info: () => {},
+    error: () => {},
+    debug: () => {},
+    warning: () => {},
+});
 
 // const SERIAL = '/dev/serial/by-id/usb-ITead_Sonoff_Zigbee_3.0_USB_Dongle_Plus_926451c9b69ded1192aedca5a7669f5d-if00-port0';
 // //             '/dev/serial/by-id/usb-ITead_Sonoff_Zigbee_3.0_USB_Dongle_Plus_926451c9b69ded1192aedca5a7669f5d-if00-port0'
@@ -38,7 +46,6 @@ homeEngine.addSystem(new ZigbeeSystem(), 1);
 //     acceptJoiningDeviceHandler: () => true,
 // } as any, logger);
 
-
 // // coordinator.on('message', (data) => {
 // //     console.log('message', data);
 // // });
@@ -56,7 +63,6 @@ homeEngine.addSystem(new ZigbeeSystem(), 1);
 // coordinator.on('deviceInterview', (data: { status: 'started' | 'successful', device: Device }) => {
 //     console.log('on deviceInterview', data);
 // });
-
 
 // coordinator
 //     .start()
