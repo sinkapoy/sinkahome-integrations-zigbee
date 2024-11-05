@@ -1,0 +1,23 @@
+{
+    "eslint.experimental.useFlatConfig": false,
+    "eslint.format.enable": true,
+    "editor.defaultFormatter": "rvest.vs-code-prettier-eslint",
+    "[typescript]": {
+        "editor.defaultFormatter": "dbaeumer.vscode-eslint",
+        "editor.formatOnSave": false,
+    },
+    "[javascript]": {
+        "editor.defaultFormatter": "dbaeumer.vscode-eslint",
+        "editor.formatOnSave": false,
+    },
+    "[vue]": {
+        "editor.defaultFormatter": "dbaeumer.vscode-eslint",
+    },
+    "eslint.run": "onSave",
+    "stm32-for-vscode.openOCDPath": false,
+    "stm32-for-vscode.armToolchainPath": false,
+    "easycode.inlineCompletion": false,
+    "easycode.dataCollection": false,
+    "diffEditor.experimental.showMoves": true,
+    "files.eol": "\n"
+}
