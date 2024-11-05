@@ -1,6 +1,6 @@
 {
     "name": "@sinkapoy/home-integrations-zigbee",
-    "version": "0.0.2",
+    "version": "0.0.3",
     "description": "sinkahome zigbee integration",
     "main": "./dist/node.js",
     "author": "sinkapoy",

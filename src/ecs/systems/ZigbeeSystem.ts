@@ -1,12 +1,14 @@
 import { HomeSystem, PropertiesComponent } from '@sinkapoy/home-core';
 import { Controller } from 'zigbee-herdsman';
-import { type Device, type Endpoint } from 'zigbee-herdsman/dist/controller/model';
 import { ZigbeeDeviceDefinition } from '../components/ZigbeeDevice';
 import { type Entity } from '@ash.ts/ash';
 import { ZigbeeEndDeviceNode } from '../nodes/ZigbeeEndDeviceNode';
 import { createZigbeeController, createZigbeeGadget, getUuidByZigbeeDevice } from 'src/utils/createZigbeeDevice';
 import { SaveController } from 'src/utils/SaveController';
 import { tryCatchMethod } from 'src/utils/tryCatchMethod';
+import { type Tz } from 'zigbee-herdsman-converters';
+import type { Device, Endpoint } from 'zigbee-herdsman/dist/controller/model';
+import { inspect } from 'util';
 
 interface IZhmPermitJoinChangedPayload {
     permitted: boolean;
@@ -60,69 +62,106 @@ export class ZigbeeSystem extends HomeSystem {
             }
             const defs = entity.get(ZigbeeDeviceDefinition);
             if (!defs?.definition) return;
-            defs.definition.toZigbee?.forEach(converter => {
-                if (!converter.key?.includes(propId)) {
-                    return;
-                }
-                if (converter.convertSet) {
-                    const meta = {
-                        logger: console,
-                        device: defs.device,
-                        message: { },
-                        mapped: defs.definition,
-                        options: {},
-                        state: {} as Record<string, any>,
-                        endpoint_name: defs.exposesMap[propId],
-                    } as any;
-                    for (const prop of props.values()) {
-                        meta.state[prop.id] = prop.value;
-                    }
-                    meta.message.state = meta.state;
+            const meta = {
+                logger: console,
+                device: defs.device,
+                message: { }, // todo: fill
+                mapped: defs.definition,
+                options: {}, // todo: fill
+                state: {} as Record<string, any>, // todo: fill
+                endpoint_name: defs.exposesMap[propId],
 
-                    meta.message[propId] = value;
-                    defs.device.endpoints.forEach(endpoint => {
-                        converter.convertSet!(endpoint, propId, value, meta).then(result => {
-                            if (!result) return;
-                            if (result.state) {
-                                for (const entry of Object.entries(result.state)) {
-                                    const prop = props.get(entry[0]);
-                                    if (prop && entry[1] !== undefined && entry[1] !== null) {
-                                        prop.value = prop[1];
-                                        this.engine.emit('gadgetPropertyEvent', entity, prop);
-                                    }
+            } as any;
+            if (defs.definition?.meta) {
+                Object.assign(meta, defs.definition.meta);
+            }
+            let converter: Tz.Converter | undefined;
+            // workaround zhm converter for tuya =(
+            if (defs.definition.meta?.tuyaDatapoints?.filter(a => a[1] === propId).length) {
+                converter = defs.definition.toZigbee[0];
+            } else {
+                defs.definition.toZigbee?.forEach(c => {
+                    if (!c.key?.includes(propId)) {
+                        console.warn(`no key ${propId} in setters for ${entity.name}`);
+                        return;
+                    }
+                    console.warn(`key ${propId} in setters for ${entity.name}`);
+                    converter = c;
+                });
+            }
+
+            if (converter?.convertSet) {
+                for (const prop of props.values()) {
+                    meta.state[prop.id] = prop.value;
+                }
+                // meta.message.state = meta.state;
+
+                meta.message[propId] = value;
+                console.log(inspect(defs.device.endpoints));
+                for (const endpoint of defs.device.endpoints) {
+                    converter.convertSet(endpoint, propId, value, meta).then(result => {
+                        if (!result) {
+                            console.warn(`no result when set ${propId} for ${entity.name}`);
+                            return;
+                        }
+                        if (result.state) {
+                            console.debug('result', JSON.stringify(result));
+                            for (const entry of Object.entries(result.state)) {
+                                const prop = props.get(entry[0]);
+                                if (prop && entry[1] !== undefined && entry[1] !== null) {
+                                    prop.value = entry[1];
+                                    this.engine.emit('gadgetPropertyEvent', entity, prop);
                                 }
                             }
-                        }).catch((e) => { console.error(e); });
-                    });
+                        }
+                    }).catch((e) => { console.error(e); });
                 }
-            });
+                
+            }
         } catch (e) {
             console.error(e);
         }
     }
 
     @tryCatchMethod
-    readProperty (entity: Entity, propId: string) {
+    async readProperty (entity: Entity, propId: string) {
         const props = entity.get(PropertiesComponent);
         if (!props) return;
         const defs = entity.get(ZigbeeDeviceDefinition);
         if (!defs?.definition) return;
-        defs.definition.toZigbee?.forEach(converter => {
-            if (!converter.key?.includes(propId)) {
-                return;
+        let converter: Tz.Converter | undefined;
+        // workaround zhm converter for tuya =(
+        if (defs.definition.meta?.tuyaDatapoints?.filter(a => a[1] === propId).length) {
+            converter = defs.definition.fromZigbee[0];
+        } else {
+            defs.definition.toZigbee?.forEach(c => {
+                if (!c.key?.includes(propId)) {
+                    // console.warn(`no key ${propId} in setters for ${entity.name}`);
+                    return;
+                }
+                // console.warn(`key ${propId} in setters for ${entity.name}`);
+                converter = c;
+            });
+        }
+
+        if (converter?.convertGet) {
+            const meta = {
+                logger: console,
+                device: defs.device,
+                message: { state: {} },
+                mapped: defs.definition,
+                options: {},
+                state: {},
+            } as any;
+            if (defs.definition?.meta) {
+                Object.assign(meta, defs.definition.meta);
             }
-            if (converter.convertGet) {
-                const meta = {
-                    logger: console,
-                    device: defs.device,
-                    message: { state: {} },
-                    mapped: defs.definition,
-                    options: {},
-                    state: {},
-                } as any;
-                converter.convertGet(defs.device.endpoints[0], propId, meta).catch(e => { console.error(e); });
+            try {
+                console.debug(await converter.convertGet(defs.device.endpoints[0], propId, meta));
+            } catch (e) {
+                console.error(e);
             }
-        });
+        }
     }
 
     @tryCatchMethod
@@ -192,17 +231,18 @@ export class ZigbeeSystem extends HomeSystem {
                     try {
                         // controller.permitJoin(true, undefined, 600);
                         this.engine.addEntity(controllerEntity);
-                        controller.getDevices().forEach(d => {
+                        for (const d of controller.getDevicesIterator()) {
                             const creation = createZigbeeGadget(d, controller, false);
                             this.engine.addEntity(creation.gadget);
-                            creation.promise.then(() => {
+                            creation.promise.then(async () => {
                                 const props = creation.gadget.get(PropertiesComponent);
                                 // const defs = creation.gadget.get(ZigbeeDeviceDefinition);
                                 for (const prop of props!.values()) {
                                     this.readProperty(creation.gadget, prop.id);
+                                    await new Promise(resolve => setTimeout(resolve, 200));
                                 }
                             });
-                        });
+                        }
                     } catch (e) {
                         console.error(e);
                     }
@@ -260,6 +300,8 @@ export class ZigbeeSystem extends HomeSystem {
                         this.engine.emit('gadgetPropertyEvent', entity, prop);
                     }
                 }
+                defs.updateFromStateMsg(result);
+                defs.database?.write(); // todo: fix writes
             }
         }
         if (props.get('linkquality')) {

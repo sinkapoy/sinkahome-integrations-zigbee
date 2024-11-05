@@ -19,6 +19,30 @@ export class ZigbeeDeviceDefinition {
     ) {
     }
 
+    get database (): {
+        entries: Record<number, { ieeeAddr: string; homeProps?: Record<string, any>; }>;
+        write: () => void;
+    } | undefined {
+        // @ts-expect-error read private field
+        const database = this.controller?.database;
+        return database;
+    }
+
+    get databaseEntry () {
+        // @ts-expect-error read private field
+        return this.database?.entries[this.device.ID];
+    }
+
+    updateFromStateMsg (update: Record<string, any>) {
+        const entry = this.databaseEntry;
+        if (!entry) return;
+        if (!entry.homeProps) {
+            entry.homeProps = { ...update };
+        } else {
+            Object.assign(entry.homeProps, update);
+        }
+    }
+
     async getDefinition (configure = false) {
         this.definition = await findByDevice(this.device, true);
         // if (configure) {

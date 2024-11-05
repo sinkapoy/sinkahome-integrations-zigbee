@@ -29,7 +29,7 @@ function convertZhmDataType (type: string) {
     }
 }
 
-function createProp (props: PropertiesComponent, expo: Base & Binary & Enum) {
+function createProp (props: PropertiesComponent, expo: Base & Binary & Enum, defs: ZigbeeDeviceDefinition) {
     const json: IProperty = {
         id: expo.property,
         accessMode: convertZhmAccessMode(expo.access || 0),
@@ -39,6 +39,11 @@ function createProp (props: PropertiesComponent, expo: Base & Binary & Enum) {
         units: (expo as any).unit,
     };
     if (!json.id) return;
+    if (defs.databaseEntry?.homeProps) {
+        if (defs.databaseEntry.homeProps[json.id] !== undefined) {
+            json.value = defs.databaseEntry?.homeProps[json.id];
+        }
+    }
     switch (expo.type) {
             case 'enum': {
                 json.enumData = {};
@@ -88,14 +93,13 @@ function convertConverterDefinitionToECS (entity: Entity, definition: Definition
         if (defs?.exposes) {
             const exposes = defs.exposes;
             for (const expo of exposes) {
-                console.log(expo);
                 switch (true) {
                         case !!expo.name:
-                            createProp(props, expo as any);
+                            createProp(props, expo as any, defs);
                             break;
                         case !!expo.features?.length:
                             for (const feature of expo.features!) {
-                                createProp(props, feature as any);
+                                createProp(props, feature as any, defs);
                             }
                             break;
                         default:
@@ -105,7 +109,7 @@ function convertConverterDefinitionToECS (entity: Entity, definition: Definition
         }
         if (defs?.definition?.options) {
             for (const expo of defs.definition.options) {
-                createProp(props, expo as any);
+                createProp(props, expo as any, defs);
             }
         }
 
