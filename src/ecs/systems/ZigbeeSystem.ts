@@ -51,11 +51,11 @@ export class ZigbeeSystem extends HomeSystem {
             if (controller) {
                 switch (propId) {
                         case 'join:permit':
-                            controller.permitJoin(!!value);
+                            controller.permitJoin(Number.MAX_SAFE_INTEGER);
                             props.get('join:permit')!.value = !!value;
                             return;
                         case 'join:permit-time':
-                            controller.permitJoin(!!value, undefined, Number(value));
+                            controller.permitJoin(Number(value));
                             props.get('join:permit-time')!.value = Number(value);
                             return;
                 }
@@ -116,7 +116,6 @@ export class ZigbeeSystem extends HomeSystem {
                         }
                     }).catch((e) => { console.error(e); });
                 }
-                
             }
         } catch (e) {
             console.error(e);

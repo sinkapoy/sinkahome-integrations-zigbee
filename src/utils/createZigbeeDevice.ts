@@ -143,7 +143,21 @@ export function createZigbeeGadget (device: Device, controller: Controller, conf
         id: 'model-id',
         accessMode: PropertyAccessMode.read,
         dataType: PropertyDataType.string,
-        value: device.modelID || '',
+        value: device.modelID ?? '',
+    });
+
+    props.createPropertyFromJson({
+        id: 'manufacturer-id',
+        accessMode: PropertyAccessMode.read,
+        dataType: PropertyDataType.int,
+        value: device.manufacturerID ?? -1,
+    });
+
+    props.createPropertyFromJson({
+        id: 'manufacturer-name',
+        accessMode: PropertyAccessMode.read,
+        dataType: PropertyDataType.string,
+        value: device.manufacturerName ?? '',
     });
 
     const defininition = new ZigbeeDeviceDefinition(device, controller);
