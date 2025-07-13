@@ -28,7 +28,6 @@ export class SaveController {
         const files = serviceLocator().get('files');
 
         if (!(await files.exist(this.savePath))) {
-            // console.log('mkdir for zigbee')
             await files.mkdir(dirname(this.savePath));
             await files.write(this.savePath, '[]');
         }

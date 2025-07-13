@@ -21,12 +21,15 @@ export class ZigbeeSystem extends HomeSystem {
 
     onInit (): void {
         this.saveController = new SaveController('./server-data/integrations/zigbee/coordinators.json');
-        this.addCoordinatorsFromConfig();
         this.setupEvent('writeGadgetProperty', this.writeProperty.bind(this));
         this.setupEvent('invokeGadgetAction', this.invokeAction.bind(this));
         this.setupNodeList({
             node: ZigbeeEndDeviceNode,
             onAdd: this.onGadgetAdd.bind(this),
+        });
+
+        (new Promise(r => setTimeout(r, 1000))).then(() => {
+            this.addCoordinatorsFromConfig();
         });
     }
 
@@ -44,14 +47,15 @@ export class ZigbeeSystem extends HomeSystem {
 
     @tryCatchMethod
     writeProperty (entity: Entity, propId: string, value: any) {
+        if (propId === 'user-name') return;
         try {
             const props = entity.get(PropertiesComponent);
             if (!props) return;
-            const controller = entity.get(Controller)!;
+            const controller = entity.get(Controller);
             if (controller) {
                 switch (propId) {
                         case 'join:permit':
-                            controller.permitJoin(Number.MAX_SAFE_INTEGER);
+                            controller.permitJoin(value ? 254 : 0);
                             props.get('join:permit')!.value = !!value;
                             return;
                         case 'join:permit-time':
@@ -97,7 +101,6 @@ export class ZigbeeSystem extends HomeSystem {
                 // meta.message.state = meta.state;
 
                 meta.message[propId] = value;
-                console.log(inspect(defs.device.endpoints));
                 for (const endpoint of defs.device.endpoints) {
                     converter.convertSet(endpoint, propId, value, meta).then(result => {
                         if (!result) {
@@ -213,7 +216,11 @@ export class ZigbeeSystem extends HomeSystem {
                 });
                 // @ts-expect-error bad types in zhm
                 controller.on('message', (data) => {
-                    this.onMessage(data, controller);
+                    try {
+                        this.onMessage(data, controller);
+                    } catch (e) {
+                        console.error(e);
+                    }
                 });
                 // @ts-expect-error bad types in zhm
                 controller.on('permitJoinChanged', (data: IZhmPermitJoinChangedPayload) => {
@@ -273,7 +280,7 @@ export class ZigbeeSystem extends HomeSystem {
         const defs = entity.get(ZigbeeDeviceDefinition);
         const props = entity.get(PropertiesComponent)!;
         if (!defs?.exposes || !defs?.definition) {
-            console.error('device has no definition ' + defs?.device.modelID);
+            console.warn('device has no definition ' + defs?.device.modelID);
             return;
         }
         const fromZigbee = defs.definition?.fromZigbee;

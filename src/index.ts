@@ -6,7 +6,7 @@ homeEngine.addSystem(new ZigbeeSystem(), 1);
 
 setLogger({
     info: () => {},
-    error: () => {},
+    error: console.error,
     debug: () => {},
     warning: () => {},
 });
